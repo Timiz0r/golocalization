@@ -12,59 +12,99 @@ import (
 type PluralRuleOperation func(decimal.Decimal) bool
 
 type PluralRules struct {
-	Locale string
-
 	zero, one, two, few, many, other PluralRuleOperation
 }
 
-func GetPluralRules(locale string) (PluralRules, error) {
-	// TODO: en-us should resolve to en
+type PluralType int
 
-	if result, ok := parsedPluralRules[locale]; ok {
-		return result, nil
-	}
+const (
+	PluralTypeZero = PluralType(iota)
+	PluralTypeOne
+	PluralTypeTwo
+	PluralTypeFew
+	PluralTypeMany
+	PluralTypeOther
+)
 
-	return PluralRules{}, PluralRulesNotFoundError{locale}
-}
-
-type PluralRulesNotFoundError struct {
+type DefaultPluralRulesNotFoundError struct {
 	Locale string
 }
 
-func (e PluralRulesNotFoundError) Error() string {
+func (p *PluralRules) Evaluate(d decimal.Decimal) PluralType {
+	switch {
+	case p.zero != nil && p.zero(d):
+		return PluralTypeZero
+	case p.one != nil && p.one(d):
+		return PluralTypeZero
+	case p.two != nil && p.two(d):
+		return PluralTypeZero
+	case p.few != nil && p.few(d):
+		return PluralTypeZero
+	case p.many != nil && p.many(d):
+		return PluralTypeZero
+	case p.other != nil && p.other(d):
+		return PluralTypeZero
+	default:
+		// it is expected that the other rule will always be present and evaluate to true
+		panic("No rules evaluated to true.")
+	}
+}
+
+func (e DefaultPluralRulesNotFoundError) Error() string {
 	return fmt.Sprint("Plural rules for locale '", e.Locale, "' not found.")
 }
 
-var parsedPluralRules = func() map[string]PluralRules {
+type PluralRulesDefinition struct {
+	Zero, One, Two, Few, Many, Other string
+}
+
+func GetDefaultPluralRulesDefinition(localeCode string) (PluralRulesDefinition, error) {
+	// TODO: en-us should resolve to en
+	if result, ok := defaultPluralRulesDefinitions[localeCode]; ok {
+		return result, nil
+	}
+	return PluralRulesDefinition{}, DefaultPluralRulesNotFoundError{localeCode}
+}
+
+func (d *PluralRulesDefinition) Parse() PluralRules {
+	return PluralRules{
+		zero:  parsePluralRule(d.Zero),
+		one:   parsePluralRule(d.One),
+		two:   parsePluralRule(d.Two),
+		few:   parsePluralRule(d.Few),
+		many:  parsePluralRule(d.Many),
+		other: parsePluralRule(d.Other),
+	}
+}
+
+var defaultPluralRulesDefinitions = func() map[string]PluralRulesDefinition {
 	supplemental := cldrData.Supplemental()
-	var result map[string]PluralRules
+	var result map[string]PluralRulesDefinition
 
 	for _, plural := range supplemental.Plurals {
 		for _, pluralRules := range plural.PluralRules {
-			var pr PluralRules
+			var pr PluralRulesDefinition
 			for _, pluralRule := range pluralRules.PluralRule {
 				switch pluralRule.Count {
 				case "zero":
-					pr.zero = parsePluralRule(pluralRule.Data())
+					pr.Zero = pluralRule.Data()
 				case "one":
-					pr.one = parsePluralRule(pluralRule.Data())
+					pr.One = pluralRule.Data()
 				case "two":
-					pr.two = parsePluralRule(pluralRule.Data())
+					pr.Two = pluralRule.Data()
 				case "few":
-					pr.few = parsePluralRule(pluralRule.Data())
+					pr.Few = pluralRule.Data()
 				case "many":
-					pr.many = parsePluralRule(pluralRule.Data())
+					pr.Many = pluralRule.Data()
 				case "other":
-					pr.other = parsePluralRule(pluralRule.Data())
+					pr.Other = pluralRule.Data()
 				default:
 					panic(fmt.Sprint("Unknown plural rule count: ", pluralRule.Count))
 				}
 			}
 
 			for _, l := range strings.Split(pluralRules.Locales, " ") {
-				lpr := pr
-				lpr.Locale = l
-				result[l] = lpr
+				result[l] = pr
 			}
 		}
 	}

@@ -14,8 +14,17 @@ type relation func(o operands) bool
 // when panicing, would be nice to output an informative string
 // but since these will generally be loaded from the official xml, panicing should not happen
 func parsePluralRule(pluralRule string) PluralRuleOperation {
+	if len(pluralRule) == 0 {
+		return nil
+	}
+
 	// TODO: validate samples
 	tokens, _ := tokenizePluralRule(pluralRule)
+	if len(*tokens) == 0 {
+		return func(_ decimal.Decimal) bool {
+			return true
+		}
+	}
 
 	relation := constructAndConditionChain(tokens)
 
@@ -158,8 +167,10 @@ func constructAccessor(tokens *[]token) accessor {
 	return accessor
 }
 
+type tokenKind int
+
 const (
-	tokenNotFound = iota - 1
+	tokenNotFound = tokenKind(iota - 1)
 	tokenOperandName
 	tokenAnd
 	tokenOr
@@ -172,18 +183,18 @@ const (
 )
 
 type token struct {
-	Kind  int
+	Kind  tokenKind
 	Value string
 }
 
-func readNextToken(tokens *[]token, expectedKinds ...int) (kind int, value string) {
+func readNextToken(tokens *[]token, expectedKinds ...tokenKind) (kind tokenKind, value string) {
 	if len(*tokens) == 0 {
 		panic("No tokens remaining.")
 	}
 
 	for expectedKind := range expectedKinds {
-		if t := (*tokens)[0]; t.Kind == expectedKind {
-			kind = expectedKind
+		if t := (*tokens)[0]; t.Kind == tokenKind(expectedKind) {
+			kind = tokenKind(expectedKind)
 			value = t.Value
 			*tokens = (*tokens)[1:]
 			return
@@ -193,7 +204,7 @@ func readNextToken(tokens *[]token, expectedKinds ...int) (kind int, value strin
 	return tokenNotFound, ""
 }
 
-func mustReadNextToken(tokens *[]token, expectedKinds ...int) (int, string) {
+func mustReadNextToken(tokens *[]token, expectedKinds ...tokenKind) (tokenKind, string) {
 	kind, value := readNextToken(tokens, expectedKinds...)
 
 	if kind == tokenNotFound {
