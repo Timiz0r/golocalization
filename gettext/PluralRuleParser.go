@@ -14,6 +14,9 @@ type relation func(o operands) bool
 // when panicing, would be nice to output an informative string
 // but since these will generally be loaded from the official xml, panicing should not happen
 func parsePluralRule(pluralRule string) PluralRuleOperation {
+	// NOTE: this means we dont support plural rules without the sample string
+	// since we can't differentiate between a zero-length (valid) rule and an non-existent rule
+	// but this should not be a problem in practice
 	if len(pluralRule) == 0 {
 		return nil
 	}

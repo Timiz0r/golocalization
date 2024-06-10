@@ -46,7 +46,10 @@ func (p *PluralRules) Evaluate(d decimal.Decimal) PluralType {
 		return PluralTypeZero
 	default:
 		// it is expected that the other rule will always be present and evaluate to true
-		panic("No rules evaluated to true.")
+		//panic("No rules evaluated to true.")
+
+		// going with returning Other, since it's expected for Other to always match if others fail
+		return PluralTypeOther
 	}
 }
 
