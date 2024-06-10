@@ -26,6 +26,24 @@ const (
 	PluralTypeOther
 )
 
+func (t PluralType) String() string {
+	switch t {
+	case PluralTypeZero:
+		return "PluralTypeZero"
+	case PluralTypeOne:
+		return "PluralTypeOne"
+	case PluralTypeTwo:
+		return "PluralTypeTwo"
+	case PluralTypeFew:
+		return "PluralTypeFew"
+	case PluralTypeMany:
+		return "PluralTypeMany"
+	case PluralTypeOther:
+		return "PluralTypeOther"
+	}
+	panic(fmt.Sprint("Unknown PluralType ", int(t)))
+}
+
 type DefaultPluralRulesNotFoundError struct {
 	Locale string
 }
@@ -82,7 +100,8 @@ func (d *PluralRulesDefinition) Parse() PluralRules {
 
 var defaultPluralRulesDefinitions = func() map[string]PluralRulesDefinition {
 	supplemental := cldrData.Supplemental()
-	var result map[string]PluralRulesDefinition
+	// dont need to keep this up-to-date, but counted 182 below
+	result := make(map[string]PluralRulesDefinition, 182)
 
 	for _, plural := range supplemental.Plurals {
 		for _, pluralRules := range plural.PluralRules {

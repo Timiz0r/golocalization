@@ -19,6 +19,10 @@ type DocumentHeaderParseError struct {
 }
 
 func CreateFromEntry(entry Entry) (DocumentHeader, error) {
+	if entry.IsContextual {
+		return DocumentHeader{}, DocumentHeaderParseError{entry, "Header must not be contextual."}
+	}
+
 	matches := languageExtractor.FindStringSubmatch(entry.Value)
 	if matches == nil {
 		return DocumentHeader{}, DocumentHeaderParseError{entry, "Language not found."}
@@ -77,7 +81,7 @@ func (e DocumentHeaderParseError) Error() string {
 
 var (
 	languageExtractor   = regexp.MustCompile(`(?im:re)^Language: (.+)$`)
-	languageParser      = regexp.MustCompile(`(?i:re)(?[a-z]+)(?:_(?[a-z]+))?(?:@(?[a-z]+))?`)
+	languageParser      = regexp.MustCompile(`(?i:re)([a-z]+)(?:_([a-z]+))?(?:@([a-z]+))?`)
 	pluralRuleExtractor = regexp.MustCompile(`(?im:re)^X-PluralRules-([a-z]+): *(.*)$`)
 	getTextVariantMap   = map[string]string{
 		"latin":       "Latn",

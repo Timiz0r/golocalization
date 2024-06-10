@@ -6,13 +6,15 @@ import (
 )
 
 type Entry struct {
-	Header     EntryHeader
-	IsObsolete bool
-	Context    string
+	Header       EntryHeader
+	IsObsolete   bool
+	IsContextual bool
+	Context      string
 
 	Id    string
 	Value string
 
+	IsPlural     bool
 	PluralId     string
 	PluralValues []string
 
@@ -47,7 +49,6 @@ func ParseEntry(lines []Line) (Entry, error) {
 	var maxPluralIndex int
 	var currentValue *strings.Builder
 	var nonObsoleteLinesFound bool
-	var shouldBePlural bool
 
 	var unsupportedKeywords []string
 
@@ -81,7 +82,6 @@ func ParseEntry(lines []Line) (Entry, error) {
 					currentValue = &id
 				case "msgid_plural":
 					currentValue = &pluralId
-					shouldBePlural = true
 				case "msgstr":
 					currentValue = &value
 				default:
@@ -114,11 +114,11 @@ func ParseEntry(lines []Line) (Entry, error) {
 		}
 	}
 
-	if shouldBePlural && len(pluralValues) == 0 {
+	if pluralId.Cap() > 0 && len(pluralValues) == 0 {
 		return Entry{}, EntryParseError{"Plural id provided, but no plurals found."}
 	}
 
-	if len(pluralValues) > 0 && !shouldBePlural {
+	if len(pluralValues) > 0 && pluralId.Cap() == 0 {
 		return Entry{}, EntryParseError{"Plurals provided, but no plural id found."}
 	}
 
@@ -127,9 +127,11 @@ func ParseEntry(lines []Line) (Entry, error) {
 		return Entry{}, EntryParseError{fmt.Sprint("Found unsupported keywords in entry: ", s)}
 	}
 
+	entry.IsContextual = context.Cap() > 0
 	entry.Context = context.String()
 	entry.Id = id.String()
 	entry.Value = value.String()
+	entry.IsPlural = pluralId.Cap() > 0
 	entry.PluralId = pluralId.String()
 
 	entry.PluralValues = make([]string, len(pluralValues))
