@@ -33,9 +33,10 @@ func parsePluralRule(pluralRule string) PluralRuleOperation {
 
 	kind, _ := readNextToken(tokens, tokenOr)
 	for kind != tokenNotFound {
+		oldRelation := relation
+		newRelation := constructAndConditionChain(tokens)
 		relation = func(o operands) bool {
-			newRelation := constructAndConditionChain(tokens)
-			return relation(o) || newRelation(o)
+			return oldRelation(o) || newRelation(o)
 		}
 
 		kind, _ = readNextToken(tokens, tokenOr)
@@ -55,9 +56,10 @@ func constructAndConditionChain(tokens *[]token) relation {
 
 	kind, _ := readNextToken(tokens, tokenAnd)
 	for kind != tokenNotFound {
+		oldRelation := relation
+		newRelation := constructListRelation(tokens)
 		relation = func(o operands) bool {
-			newRelation := constructListRelation(tokens)
-			return relation(o) && newRelation(o)
+			return oldRelation(o) && newRelation(o)
 		}
 
 		kind, _ = readNextToken(tokens, tokenAnd)
@@ -83,9 +85,10 @@ func constructListRelation(tokens *[]token) relation {
 
 	kind, _ := readNextToken(tokens, tokenComma)
 	for kind != tokenNotFound {
+		oldRelation := relation
+		newRelation := constructSingleRelation(tokens, accessor, isEqualityOperation)
 		relation = func(o operands) bool {
-			nextRelation := constructSingleRelation(tokens, accessor, isEqualityOperation)
-			return relation(o) || nextRelation(o)
+			return oldRelation(o) || newRelation(o)
 		}
 
 		kind, _ = readNextToken(tokens, tokenComma)
@@ -162,8 +165,9 @@ func constructAccessor(tokens *[]token) accessor {
 	}
 
 	if hasModValue {
+		oldAccessor := accessor
 		accessor = func(o operands) decimal.Decimal {
-			return accessor(o).Mod(modValue)
+			return oldAccessor(o).Mod(modValue)
 		}
 	}
 
@@ -192,13 +196,14 @@ type token struct {
 
 func readNextToken(tokens *[]token, expectedKinds ...tokenKind) (kind tokenKind, value string) {
 	if len(*tokens) == 0 {
-		panic("No tokens remaining.")
+		return tokenNotFound, ""
 	}
 
-	for expectedKind := range expectedKinds {
-		if t := (*tokens)[0]; t.Kind == tokenKind(expectedKind) {
+	token := (*tokens)[0]
+	for _, expectedKind := range expectedKinds {
+		if token.Kind == tokenKind(expectedKind) {
 			kind = tokenKind(expectedKind)
-			value = t.Value
+			value = token.Value
 			*tokens = (*tokens)[1:]
 			return
 		}
@@ -312,4 +317,32 @@ ScanLoop:
 	}
 
 	return &tokens, pluralRule[s.Offset:]
+}
+
+func (t tokenKind) String() string {
+	switch t {
+
+	case tokenNotFound:
+		return "tokenNotFound"
+	case tokenOperandName:
+		return "tokenOperandName"
+	case tokenAnd:
+		return "tokenAnd"
+	case tokenOr:
+		return "tokenOr"
+	case tokenEquals:
+		return "tokenEquals"
+	case tokenNotEquals:
+		return "tokenNotEquals"
+	case tokenModulus:
+		return "tokenModulus"
+	case tokenComma:
+		return "tokenComma"
+	case tokenRange:
+		return "tokenRange"
+	case tokenNumber:
+		return "tokenNumber"
+	default:
+		panic(fmt.Sprintf("Found invalid %T: %v", tokenNotFound, int(t)))
+	}
 }

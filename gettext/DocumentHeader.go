@@ -18,7 +18,7 @@ type DocumentHeaderParseError struct {
 	Reason string
 }
 
-func CreateFromEntry(entry Entry) (DocumentHeader, error) {
+func CreateHeaderFromEntry(entry Entry) (DocumentHeader, error) {
 	if entry.IsContextual {
 		return DocumentHeader{}, DocumentHeaderParseError{entry, "Header must not be contextual."}
 	}
@@ -38,14 +38,14 @@ func CreateFromEntry(entry Entry) (DocumentHeader, error) {
 
 		if getTextVariant := matches[3]; len(getTextVariant) > 0 {
 			if variant, ok := getTextVariantMap[getTextVariant]; ok {
-				languageValue = fmt.Sprint(rawLanguageValue, "-", variant)
+				languageValue = fmt.Sprint(languageValue, "-", variant)
 			} else {
 				return DocumentHeader{}, DocumentHeaderParseError{entry, fmt.Sprint("Unable to parse variant of language: ", rawLanguageValue)}
 			}
 		}
 
 		if country := matches[2]; len(country) > 0 {
-			languageValue = fmt.Sprint(rawLanguageValue, "-", country)
+			languageValue = fmt.Sprint(languageValue, "-", country)
 		}
 	}
 
@@ -80,9 +80,9 @@ func (e DocumentHeaderParseError) Error() string {
 }
 
 var (
-	languageExtractor   = regexp.MustCompile(`(?im:re)^Language: (.+)$`)
-	languageParser      = regexp.MustCompile(`(?i:re)([a-z]+)(?:_([a-z]+))?(?:@([a-z]+))?`)
-	pluralRuleExtractor = regexp.MustCompile(`(?im:re)^X-PluralRules-([a-z]+): *(.*)$`)
+	languageExtractor   = regexp.MustCompile(`(?im)^Language: (.+)$`)
+	languageParser      = regexp.MustCompile(`(?i)([a-z]+)(?:_([a-z]+))?(?:@([a-z]+))?`)
+	pluralRuleExtractor = regexp.MustCompile(`(?im)^X-PluralRules-([a-z]+): *(.*)$`)
 	getTextVariantMap   = map[string]string{
 		"latin":       "Latn",
 		"cyrillic":    "Cyrl",

@@ -5,17 +5,23 @@ import (
 	"strings"
 )
 
-type Entry struct {
-	Header       EntryHeader
-	IsObsolete   bool
+type EntryKey struct {
 	IsContextual bool
 	Context      string
 
-	Id    string
-	Value string
+	Id string
 
-	IsPlural     bool
-	PluralId     string
+	IsPlural bool
+	PluralId string
+}
+
+type Entry struct {
+	EntryKey
+
+	Header     EntryHeader
+	IsObsolete bool
+
+	Value        string
 	PluralValues []string
 
 	Lines []Line
@@ -46,7 +52,7 @@ func ParseEntry(lines []Line) (Entry, error) {
 
 	// we currently use this for validation against len(pluralValues),
 	// but we could hypothetically support missing values, as well. but we don't!
-	var maxPluralIndex int
+	maxPluralIndex := -1
 	var currentValue *strings.Builder
 	var nonObsoleteLinesFound bool
 
@@ -54,12 +60,13 @@ func ParseEntry(lines []Line) (Entry, error) {
 
 	for _, line := range lines {
 		if line.IsMarkedObsolete {
-			line, error := ParseLine(line.Comment.Comment[2:])
-			if error != nil {
+			var err error
+			line, err = ParseLine(line.Comment.Comment[2:])
+			if err != nil {
 				return Entry{}, EntryLineParseError{line, "Failed to parse obsolete line."}
 			}
 			entry.IsObsolete = true
-		} else {
+		} else if !line.IsCommentOrWhiteSpace {
 			nonObsoleteLinesFound = true
 		}
 

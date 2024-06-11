@@ -19,10 +19,10 @@ func TestWhenFirstEntryNotHeader(t *testing.T) {
 msgid "foo"
 msgstr "bar"`
 
-	_, err := gettext.ParseDocument(documentText)
+	_, err := gettext.ParseDocumentString(documentText)
 
-	if _, ok := err.(gettext.DocumentMissingHeaderError); !ok {
-		t.Errorf("Expected %T but got %T", gettext.DocumentMissingHeaderError{}, err)
+	if _, ok := err.(gettext.DocumentParseError); !ok {
+		t.Errorf("Expected %T but got %T: %+v", gettext.DocumentParseError{}, err, err)
 	}
 }
 
@@ -31,7 +31,10 @@ func TestReturnsRightHeader_WhenJustLanguage(t *testing.T) {
 msgid ""
 msgstr "Language: az_AZ@latin\n"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	header := doc.Header
 
 	expectedTag := language.Make("az-Latn-AZ")
@@ -70,7 +73,10 @@ msgstr "Language: az_AZ@latin\n"
 		expectedPluralRules.Many,
 		expectedPluralRules.Other)
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	header := doc.Header
 
 	expectedTag := language.Make("az-Latn-AZ")
@@ -107,10 +113,10 @@ msgctxt ""
 msgid ""
 msgstr "bar"`
 
-	_, err := gettext.ParseDocument(documentText)
+	_, err := gettext.ParseDocumentString(documentText)
 
-	if _, ok := err.(gettext.DocumentHeaderParseError); !ok {
-		t.Errorf("Expected %T but got %T", gettext.DocumentHeaderParseError{}, err)
+	if _, ok := err.(gettext.DocumentParseError); !ok {
+		t.Errorf("Expected %T but got %T: %+v", gettext.DocumentParseError{}, err, err)
 	}
 }
 
@@ -122,10 +128,10 @@ msgstr "bar"
 msgid "foo"
 msgstr "baz"`
 
-	_, err := gettext.ParseDocument(documentText)
+	_, err := gettext.ParseDocumentString(documentText)
 
 	if _, ok := err.(gettext.DocumentParseError); !ok {
-		t.Errorf("Expected %T but got %T", gettext.DocumentParseError{}, err)
+		t.Errorf("Expected %T but got %T: %+v", gettext.DocumentParseError{}, err, err)
 	}
 
 	documentText = genericHeader + `
@@ -138,7 +144,7 @@ msgid "foo"
 msgstr "baz"`
 
 	if _, ok := err.(gettext.DocumentParseError); !ok {
-		t.Errorf("Expected %T but got %T", gettext.DocumentParseError{}, err)
+		t.Errorf("Expected %T but got %T: %+v", gettext.DocumentParseError{}, err, err)
 	}
 }
 
@@ -150,10 +156,10 @@ msgctxt "orange"
 msgid "foo"
 msgstr "bar"`
 
-	_, err := gettext.ParseDocument(documentText)
+	_, err := gettext.ParseDocumentString(documentText)
 
 	if _, ok := err.(gettext.DocumentParseError); !ok {
-		t.Errorf("Expected %T but got %T", gettext.DocumentParseError{}, err)
+		t.Errorf("Expected %T but got %T: %+v", gettext.DocumentParseError{}, err, err)
 	}
 }
 
@@ -167,7 +173,10 @@ msgctxt "orange"
 msgid "foo"
 msgstr "baz"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 
 	testEntryCount(t, &doc, 2)
 	testContextualEntry(t, &doc, "apple", "foo")
@@ -184,7 +193,10 @@ msgctxt "apple"
 msgid "bar"
 msgstr "baz"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 
 	testEntryCount(t, &doc, 2)
 	testContextualEntry(t, &doc, "apple", "foo")
@@ -200,7 +212,10 @@ msgstr "bar"
 msgid "foo"
 msgstr "baz"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 
 	testEntryCount(t, &doc, 2)
 	testContextualEntry(t, &doc, "apple", "foo")
@@ -216,7 +231,10 @@ msgctxt "apple"
 msgid "foo"
 msgstr "baz"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 
 	testEntryCount(t, &doc, 2)
 	testEntry(t, &doc, "foo")
@@ -231,7 +249,10 @@ msgid "foo" #comment inline to msgid
 msgstr "bar"
 #comment at end`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 1)
 
 	lines := doc.Entries[1].Lines
@@ -255,7 +276,10 @@ msgstr "bar"
 msgid "bar"
 msgstr "baz"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 2)
 
 	lines := doc.Entries[1].Lines
@@ -278,7 +302,10 @@ msgstr "bar"
 msgid "bar"
 msgstr "baz"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 2)
 
 	lines := doc.Entries[1].Lines
@@ -303,7 +330,10 @@ msgid "bar"
 
 msgstr "baz"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 2)
 
 	lines := doc.Entries[2].Lines
@@ -328,7 +358,10 @@ msgstr "bar"
 
 `
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 1)
 
 	lines := doc.Entries[1].Lines
@@ -360,7 +393,10 @@ msgstr "bar"
 msgid "baz"
 msgstr "wat"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 3)
 
 	entry := doc.Entries[2]
@@ -405,7 +441,10 @@ func TestParsesConsecutiveObsoleteEntries(t *testing.T) {
 #~ "something" #inline comment
 #comment`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 3)
 
 	if e := doc.Entries[1]; e.Id != "a" {
@@ -460,7 +499,10 @@ msgstr "bar"
 msgid "baz"
 msgstr "wat"`
 
-	doc, _ := gettext.ParseDocument(documentText)
+	doc, err := gettext.ParseDocumentString(documentText)
+	if err != nil {
+		t.Error("Error parsing document: ", err)
+	}
 	testEntryCount(t, &doc, 3)
 
 	entry := doc.Entries[2]

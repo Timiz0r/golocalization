@@ -79,13 +79,13 @@ func KeywordedValueLine(keyword Keyword, lineValue LineValue) Line {
 
 var parseRegex = regexp.MustCompile(`` +
 	`(?:` + // keyword (msgid, etc.) and optional index
-	`` + `(?<keyword>[^\s\["#]+)` + // could try [a-zA-Z0-9] or something, as well
-	`` + `(?:\[(?<index>\d+)\])?` +
+	`` + `\s*(?<keyword>[^\s\["#]+)` + // could try [a-zA-Z0-9] or something, as well
+	`` + `\s*(?:\[(?<index>\d+)\])?` +
 	`)?` +
-	`(?:"` + // value
-	`` + `(?<string>(?:[^"]|\\")*)` +
+	`\s*(?:"` + // value
+	`` + `(?<value>(?:[^"]|\\")*)` +
 	`")?` +
-	`(?:` + // comment
+	`\s*(?:` + // comment
 	`` + `#(?<comment>.*)` +
 	`)?`)
 

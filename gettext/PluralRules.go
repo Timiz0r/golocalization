@@ -53,15 +53,15 @@ func (p *PluralRules) Evaluate(d decimal.Decimal) PluralType {
 	case p.zero != nil && p.zero(d):
 		return PluralTypeZero
 	case p.one != nil && p.one(d):
-		return PluralTypeZero
+		return PluralTypeOne
 	case p.two != nil && p.two(d):
-		return PluralTypeZero
+		return PluralTypeTwo
 	case p.few != nil && p.few(d):
-		return PluralTypeZero
+		return PluralTypeFew
 	case p.many != nil && p.many(d):
-		return PluralTypeZero
+		return PluralTypeMany
 	case p.other != nil && p.other(d):
-		return PluralTypeZero
+		return PluralTypeOther
 	default:
 		// it is expected that the other rule will always be present and evaluate to true
 		//panic("No rules evaluated to true.")
