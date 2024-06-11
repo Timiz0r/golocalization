@@ -21,8 +21,7 @@ func parsePluralRule(pluralRule string) PluralRuleOperation {
 		return nil
 	}
 
-	// TODO: validate samples
-	tokens, _ := tokenizePluralRule(pluralRule)
+	tokens, sample := tokenizePluralRule(pluralRule)
 	if len(*tokens) == 0 {
 		return func(_ decimal.Decimal) bool {
 			return true
@@ -46,9 +45,16 @@ func parsePluralRule(pluralRule string) PluralRuleOperation {
 		panic(fmt.Sprint("Unexpectedly have additional tokens: ", *tokens))
 	}
 
-	return func(d decimal.Decimal) bool {
+	result := func(d decimal.Decimal) bool {
 		return relation(createOperands(d))
 	}
+
+	validationError := validatePluralRule(result, sample, pluralRule)
+	if validationError != nil {
+		panic(validationError)
+	}
+
+	return result
 }
 
 func constructAndConditionChain(tokens *[]token) relation {
@@ -187,6 +193,11 @@ const (
 	tokenComma
 	tokenRange
 	tokenNumber
+
+	// used only for sample parsing
+	tokenIntegerSample
+	tokenDecimalSample
+	tokenTripleDot
 )
 
 type token struct {
@@ -342,6 +353,12 @@ func (t tokenKind) String() string {
 		return "tokenRange"
 	case tokenNumber:
 		return "tokenNumber"
+	case tokenIntegerSample:
+		return "tokenIntegerSample"
+	case tokenDecimalSample:
+		return "tokenDecimalSample"
+	case tokenTripleDot:
+		return "tokenTripleDot"
 	default:
 		panic(fmt.Sprintf("Found invalid %T: %v", tokenNotFound, int(t)))
 	}
