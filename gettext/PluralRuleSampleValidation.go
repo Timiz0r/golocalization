@@ -97,8 +97,9 @@ func tokenizePluralRuleSample(sample string) []token {
 	s.Init(strings.NewReader(sample))
 	s.Mode = scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.SkipComments
 	s.IsIdentRune = func(ch rune, i int) bool {
-		//since we treat ... as an ident, we also treat … as one for consistency
-		return ch == '@' || unicode.IsLetter(ch) || ch == '…' || ch == '.' && (i == 0 || i == 1 || i == 2)
+		// since we treat ... as an ident, we also treat … as one for consistency
+		// and for letters, we need to be careful about i because we need to filter out exponential notation later on
+		return ch == '@' || unicode.IsLetter(ch) && i > 0 || ch == '…' || ch == '.' && (i == 0 || i == 1 || i == 2)
 	}
 
 	var tokens []token
@@ -116,14 +117,14 @@ ScanLoop:
 		case scanner.Int:
 			if foundExponentialNotation {
 				foundExponentialNotation = false
-				continue
+				continue ScanLoop
 			}
 			tokens = append(tokens, token{tokenNumber, s.TokenText()})
 			continue ScanLoop
 		case scanner.Float:
 			if foundExponentialNotation {
 				foundExponentialNotation = false
-				continue
+				continue ScanLoop
 			}
 			tokens = append(tokens, token{tokenNumber, s.TokenText()})
 			continue ScanLoop
@@ -136,9 +137,11 @@ ScanLoop:
 		case 'c':
 			tokens = tokens[:len(tokens)-1]
 			foundExponentialNotation = true
+			continue ScanLoop
 		case 'e':
 			tokens = tokens[:len(tokens)-1]
 			foundExponentialNotation = true
+			continue ScanLoop
 		default:
 			panic(fmt.Sprintf("Unknown token '%v'", tok))
 		}
